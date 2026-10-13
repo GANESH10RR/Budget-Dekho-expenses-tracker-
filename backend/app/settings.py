@@ -13,6 +13,7 @@ demo_mode = os.getenv("READ_ONLY_DEMO", "false").strip().lower()
 if demo_mode not in {"true", "false"}:
     raise RuntimeError("READ_ONLY_DEMO must be either 'true' or 'false'.")
 READ_ONLY_DEMO = demo_mode == "true"
+DEMO_ACCOUNT_EMAIL = os.getenv("DEMO_ACCOUNT_EMAIL", "demo@budgetdekho.in").strip().lower()
 
 if APP_ENV == "production":
     if not SECRET_KEY or not SECRET_KEY.strip() or len(SECRET_KEY) < 32:

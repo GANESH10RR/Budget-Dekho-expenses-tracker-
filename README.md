@@ -2,7 +2,7 @@
 
 BudgetDekho is a full-stack personal-finance app for recording income and expenses, setting monthly category budgets, and understanding spending through a dashboard, charts, plain-language insights, and downloadable CSV reports.
 
-> **Demo and safety notice:** The included Render Blueprint is a read-only, sample-data demo. Its shared demo credentials are public by design. Do not enter or store real financial or personal information in the public demo. It uses free hosting and a free managed PostgreSQL database, which has important availability and data-retention limits. This project is not yet ready to handle real users' financial data.
+> **Free-hosting notice:** The Render Blueprint allows people to create individual accounts and save their own records. The shared sample account remains read-only. Render's free PostgreSQL database expires after 30 days and has no backups, so user data can be permanently lost. This setup is for testing only; it is not suitable for financial records that you need to keep.
 
 ## Contents
 
@@ -31,7 +31,7 @@ BudgetDekho is a full-stack personal-finance app for recording income and expens
 - Scope financial records to the authenticated account.
 - Use SQLite for local development and PostgreSQL for production deployments; manage schema changes with Alembic.
 - Run backend tests and a frontend production build through GitHub Actions.
-- Optionally start a read-only public demo populated with synthetic transactions.
+- Optionally start a public demo populated with synthetic transactions and a read-only shared sample account.
 
 ## Technology stack
 
@@ -236,7 +236,7 @@ The maximum page size is 100.
 
 Amounts are stored using `NUMERIC(12, 2)`. Income, expenses, and budgets are linked to an account; reads and changes are scoped to the authenticated user.
 
-## Deploy the sample demo to Render
+## Deploy the free multi-user demo to Render
 
 The repository includes `render.yaml`, which defines:
 
@@ -244,9 +244,10 @@ The repository includes `render.yaml`, which defines:
 - A Render static site for the React frontend.
 - A managed Render PostgreSQL database.
 - A generated JWT secret.
-- A read-only setting on the API and a sample-data notice in the frontend.
+- Public registration and independent accounts for each user.
+- A seeded shared sample account whose financial records remain read-only.
 
-The shared demo account is shown on the public login screen, and the API rejects account registration and all transaction/budget changes when `READ_ONLY_DEMO=true`.
+New visitors can register their own account and add, edit, and delete their records. The shared `demo@budgetdekho.in` sample account is read-only; users should register a personal account to save their own data. The Blueprint sets `READ_ONLY_DEMO=false`, while API authorization still blocks writes for the configured sample account.
 
 To deploy:
 
@@ -256,7 +257,7 @@ To deploy:
 4. After deployment, open the static-site URL and confirm that the login page and sample data work.
 5. If Render assigns a URL that differs from the hostname in the Blueprint, update the API's `CORS_ORIGINS` to the exact frontend origin and set the static site's `VITE_API_URL` to the API URL ending in `/api`; then redeploy.
 
-The Blueprint is **free and demo-only**. Render free web services can sleep while idle, and the free PostgreSQL database expires after 30 days, has a storage limit, and does not include backups. Never use it for real accounts or financial data. Check Render's current [free instance limitations](https://render.com/docs/free) before deploying; plan features and costs may change.
+The Blueprint is **free and experimental**. Render free web services can sleep while idle, and the free PostgreSQL database expires after 30 days, has a storage limit, and does not include backups. Any account data can therefore disappear permanently. Avoid entering sensitive financial information and keep your own exports/backups; do not rely on this setup for records you need to retain. Check Render's current [free instance limitations](https://render.com/docs/free) before deploying; plan features and costs may change.
 
 ## Configuration reference
 
@@ -266,15 +267,16 @@ The Blueprint is **free and demo-only**. Render free web services can sleep whil
 | `SECRET_KEY` | Production | Private, randomly generated JWT signing secret of at least 32 characters. Never commit it. |
 | `DATABASE_URL` | Production | PostgreSQL connection string. SQLite is for local development only when `APP_ENV=production`. |
 | `CORS_ORIGINS` | Production | Comma-separated, explicit HTTPS frontend origins without paths. Do not use `*`. |
-| `READ_ONLY_DEMO` | No | Set to `true` to block registration and every transaction/budget write endpoint. |
+| `READ_ONLY_DEMO` | No | Set to `true` to block registrations and transaction/budget writes for all users. The shared sample account remains read-only regardless. |
+| `DEMO_ACCOUNT_EMAIL` | No | Email of the seeded shared sample account, which is always blocked from modifying data. |
 | `VITE_API_URL` | Frontend | API base URL ending in `/api`; baked into the frontend when it is built. |
-| `VITE_DEMO_MODE` | Frontend | Set to `true` to display the shared demo-login notice and hide UI write actions. Backend read-only mode must also be enabled. |
+| `VITE_DEMO_MODE` | Frontend | Set to `true` to show the read-only sample-demo notice and hide write actions; set to `false` for public registration and personal accounts. |
 
 For local development, the backend defaults to SQLite and allows the Vite development origins. To generate a production secret locally, run `python -c "import secrets; print(secrets.token_urlsafe(32))"` and enter the result directly into your hosting provider's secret/environment settings. Do not paste production secrets into source files, commit them, or share them in support requests.
 
 ## Current limitations and before-production checklist
 
-This project is a learning/portfolio app and sample demo, not a production financial service. Before accepting public accounts or real financial data:
+This project is a learning/portfolio app and experimental free demo, not a production financial service. Before relying on it for financial records:
 
 - Replace browser `localStorage` token handling with a reviewed secure authentication design; add appropriate CSRF protection if using cookies.
 - Add rate limiting for registration and login, email verification, password recovery, and account/data deletion.

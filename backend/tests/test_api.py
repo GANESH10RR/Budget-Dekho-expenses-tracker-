@@ -154,6 +154,38 @@ def test_read_only_demo_rejects_every_write_route(client: TestClient, monkeypatc
     assert client.delete("/api/budgets/1", headers=headers).status_code == 403
 
 
+def test_public_users_can_save_data_but_shared_demo_account_is_read_only(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    _, demo_token = create_user(client, "demo@budgetdekho.in", "Demo Account")
+    _, user_token = create_user(client, "personal@example.com", "Personal Account")
+    monkeypatch.setattr("app.services.READ_ONLY_DEMO", False)
+    expense = {"title": "Lunch", "amount": 12.5, "category": "Food", "date": "2026-10-01"}
+
+    registered = client.post(
+        "/api/auth/register",
+        json={"name": "New Public User", "email": "new-public@example.com", "password": "test-password-123"},
+    )
+    assert registered.status_code == 201
+
+    saved = client.post(
+        "/api/expenses",
+        headers={"Authorization": f"Bearer {user_token}"},
+        json=expense,
+    )
+    assert saved.status_code == 201
+    assert saved.json()["title"] == "Lunch"
+
+    demo_write = client.post(
+        "/api/expenses",
+        headers={"Authorization": f"Bearer {demo_token}"},
+        json=expense,
+    )
+    assert demo_write.status_code == 403
+    assert "shared sample account is read-only" in demo_write.json()["detail"]
+
+
 def test_transaction_lists_are_paginated(client: TestClient):
     _, token = create_user(client, "pages@example.com")
     headers = {"Authorization": f"Bearer {token}"}

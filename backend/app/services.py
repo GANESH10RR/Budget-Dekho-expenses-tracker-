@@ -3,18 +3,26 @@ import calendar
 from datetime import date
 from typing import Optional
 
-from fastapi import HTTPException, Query, status
+from fastapi import Depends, HTTPException, Query, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from .models import Budget, Expense, Income
+from .auth import get_current_user
+from .models import Budget, Expense, Income, User
 from .schemas import CATEGORIES
-from .settings import READ_ONLY_DEMO
+from .settings import DEMO_ACCOUNT_EMAIL, READ_ONLY_DEMO
 
 
-def require_writable() -> None:
+def require_registration_enabled() -> None:
     if READ_ONLY_DEMO:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "This public demo is read-only; changes are not saved.")
+
+
+def require_writable(user: User = Depends(get_current_user)) -> None:
+    if READ_ONLY_DEMO:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "This public demo is read-only; changes are not saved.")
+    if user.email == DEMO_ACCOUNT_EMAIL:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "The shared sample account is read-only. Create your own account to save data.")
 
 
 # ---------- months ----------

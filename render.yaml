@@ -22,7 +22,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.11
       - key: READ_ONLY_DEMO
-        value: "true"
+        value: "false"
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
@@ -42,7 +42,7 @@ services:
       - key: VITE_API_URL
         value: https://budgetdekho-demo-api.onrender.com/api
       - key: VITE_DEMO_MODE
-        value: "true"
+        value: "false"
     routes:
       - type: rewrite
         source: /*
