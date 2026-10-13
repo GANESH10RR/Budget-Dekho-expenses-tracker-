@@ -19,6 +19,8 @@ services:
     envVars:
       - key: APP_ENV
         value: production
+      - key: PYTHON_VERSION
+        value: 3.11.11
       - key: READ_ONLY_DEMO
         value: "true"
       - key: SECRET_KEY
