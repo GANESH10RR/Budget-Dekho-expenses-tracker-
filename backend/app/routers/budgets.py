@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from ..auth import get_current_user
 from ..database import get_db
 from ..models import Budget, User
-from ..schemas import BudgetIn
+from ..schemas import BudgetIn, YearlyBudgetIn
 from ..services import budget_status, current_month, get_owned, require_writable, valid_month
 
 router = APIRouter(prefix="/api/budgets", tags=["Budgets"])
@@ -32,6 +32,37 @@ def set_budget(data: BudgetIn, db: Session = Depends(get_db), user: User = Depen
         db.add(Budget(user_id=user.id, **data.model_dump()))
     db.commit()
     return {"ok": True}
+
+
+@router.put("/yearly", dependencies=[Depends(require_writable)])
+def set_yearly_budget(
+    data: YearlyBudgetIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Set the same monthly budget for a category in every month of the year."""
+    for month_number in range(1, 13):
+        month = f"{data.year:04d}-{month_number:02d}"
+        budget = (
+            db.query(Budget)
+            .filter(
+                Budget.user_id == user.id,
+                Budget.category == data.category,
+                Budget.month == month,
+            )
+            .first()
+        )
+        if budget:
+            budget.amount = data.amount
+        else:
+            db.add(Budget(
+                user_id=user.id,
+                category=data.category,
+                amount=data.amount,
+                month=month,
+            ))
+    db.commit()
+    return {"ok": True, "category": data.category, "year": data.year, "months_updated": 12}
 
 
 @router.delete("/{budget_id}", status_code=204, dependencies=[Depends(require_writable)])

@@ -99,3 +99,9 @@ class BudgetIn(BaseModel):
     category: Category
     amount: Decimal = Field(gt=0, le=Decimal("1000000000"), max_digits=12, decimal_places=2)
     month: str = Field(pattern=r"^\d{4}-(0[1-9]|1[0-2])$")
+
+
+class YearlyBudgetIn(BaseModel):
+    category: Category
+    amount: Decimal = Field(gt=0, le=Decimal("1000000000"), max_digits=12, decimal_places=2)
+    year: int = Field(ge=2000, le=2100)

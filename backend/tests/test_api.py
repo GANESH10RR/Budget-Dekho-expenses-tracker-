@@ -114,6 +114,43 @@ def test_budget_warning_and_csv_formula_protection(client: TestClient):
     assert any(row[1].startswith("'=") for row in monthly_rows if len(row) > 1)
 
 
+def test_yearly_budget_applies_monthly_amount_to_all_months_and_updates_existing_budget(client: TestClient):
+    _, token = create_user(client, "yearly-budget@example.com")
+    _, other_token = create_user(client, "other-yearly-budget@example.com")
+    headers = {"Authorization": f"Bearer {token}"}
+    other_headers = {"Authorization": f"Bearer {other_token}"}
+    existing = client.put(
+        "/api/budgets",
+        headers=headers,
+        json={"category": "Food", "amount": 75, "month": "2027-03"},
+    )
+    assert existing.status_code == 200
+
+    response = client.put(
+        "/api/budgets/yearly",
+        headers=headers,
+        json={"category": "Food", "amount": 125.5, "year": 2027},
+    )
+    assert response.status_code == 200
+    assert response.json()["months_updated"] == 12
+
+    for month_number in range(1, 13):
+        month = f"2027-{month_number:02d}"
+        budgets = client.get(f"/api/budgets?month={month}", headers=headers)
+        assert budgets.status_code == 200
+        assert len(budgets.json()["budgets"]) == 1
+        assert budgets.json()["budgets"][0]["amount"] == 125.5
+
+    invalid_year = client.put(
+        "/api/budgets/yearly",
+        headers=headers,
+        json={"category": "Food", "amount": 125, "year": 2101},
+    )
+    assert invalid_year.status_code == 422
+    assert client.get("/api/budgets?month=2028-01", headers=headers).json()["budgets"] == []
+    assert client.get("/api/budgets?month=2027-01", headers=other_headers).json()["budgets"] == []
+
+
 def test_protected_endpoints_require_authentication(client: TestClient):
     assert client.get("/api/expenses").status_code == 401
 

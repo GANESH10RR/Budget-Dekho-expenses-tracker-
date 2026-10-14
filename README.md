@@ -25,6 +25,7 @@ BudgetDekho is a full-stack personal-finance app for recording income and expens
 - Record, edit, delete, search, and filter income and expenses.
 - Categorize expenses and page through large transaction lists.
 - Set a monthly limit per category and receive warnings at 80% and 100% of that limit.
+- Apply a category's monthly limit to one selected month or repeat it across all 12 months of a selected year.
 - View monthly income, expenses, savings, balance, recent transactions, category breakdowns, and six-month trends.
 - Generate rule-based spending insights and suggestions.
 - Download expense lists and monthly summaries as CSV. User-entered text is escaped to reduce spreadsheet-formula risks.
@@ -204,6 +205,7 @@ All routes under `/api` require an `Authorization: Bearer <access_token>` header
 | `PUT`, `DELETE` | `/api/expenses/{expense_id}` | Edit or delete an expense record owned by the user. |
 | `GET` | `/api/budgets?month=YYYY-MM` | Return monthly budget amounts, spending, remaining amounts, and alerts. |
 | `PUT` | `/api/budgets` | Create/update a category budget for a month (disabled in read-only demo mode). |
+| `PUT` | `/api/budgets/yearly` | Create/update the same monthly category budget for each of the 12 months in a year (disabled in read-only demo mode). |
 | `DELETE` | `/api/budgets/{budget_id}` | Delete a budget owned by the user (disabled in read-only demo mode). |
 | `GET` | `/api/dashboard?month=YYYY-MM` | Monthly totals, all-time balance, and recent transactions. |
 | `GET` | `/api/analytics?month=YYYY-MM` | Category breakdowns and six-month trends. |

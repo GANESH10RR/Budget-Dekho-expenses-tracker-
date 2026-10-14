@@ -7,20 +7,30 @@ export default function Budgets() {
   const [month, setMonth] = useState(thisMonth());
   const [data, setData] = useState(null);
   const [form, setForm] = useState({ category: "Food", amount: "" });
+  const [scope, setScope] = useState("month");
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
   const load = useCallback(() => {
-    api.get("/budgets", { params: { month } }).then((r) => setData(r.data)).catch((e) => setError(errorMessage(e)));
+    return api.get("/budgets", { params: { month } }).then((r) => setData(r.data)).catch((e) => setError(errorMessage(e)));
   }, [month]);
-  useEffect(load, [load]);
+  useEffect(() => { load(); }, [load]);
 
   const save = async (e) => {
     e.preventDefault();
     setError("");
+    setMessage("");
     try {
-      await api.put("/budgets", { category: form.category, amount: parseFloat(form.amount), month });
+      const payload = { category: form.category, amount: parseFloat(form.amount) };
+      if (scope === "year") {
+        await api.put("/budgets/yearly", { ...payload, year: Number(month.slice(0, 4)) });
+        setMessage(`${form.category} budget set to ${inr(payload.amount)} per month for all 12 months of ${month.slice(0, 4)}.`);
+      } else {
+        await api.put("/budgets", { ...payload, month });
+        setMessage(`${form.category} monthly budget updated for ${monthName(month)}.`);
+      }
       setForm({ ...form, amount: "" });
-      load();
+      await load();
     } catch (err) {
       setError(errorMessage(err));
     }
@@ -44,12 +54,23 @@ export default function Budgets() {
         <div className="w-full sm:w-48"><Field label="Category">
           <select className="input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select>
         </Field></div>
+        <div className="w-full sm:w-56"><Field label="Apply budget to">
+          <select className="input" value={scope} onChange={(e) => setScope(e.target.value)}>
+            <option value="month">Selected month only</option>
+            <option value="year">Every month this year</option>
+          </select>
+        </Field></div>
         <div className="w-full sm:w-48"><Field label="Monthly budget (₹)">
           <input className="input" type="number" required min="1" step="1" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
         </Field></div>
-        <button className="btn-primary">Set budget</button>
-        <p className="text-xs text-ink-mute">Setting a budget for a category that already has one updates it.</p>
+        <button className="btn-primary">{scope === "year" ? "Apply to 12 months" : "Set monthly budget"}</button>
+        <p className="w-full text-xs text-ink-mute">
+          {scope === "year"
+            ? `Sets this amount independently for ${form.category} in all 12 months of ${month.slice(0, 4)}. Existing monthly budgets for this category will be updated.`
+            : "Setting a budget for a category that already has one updates it."}
+        </p>
       </form>}
+      {!error && message && <p role="status" className="mb-3 text-sm font-medium text-income">{message}</p>}
       <ErrorText>{error}</ErrorText>
 
       {alerts.length > 0 && (
